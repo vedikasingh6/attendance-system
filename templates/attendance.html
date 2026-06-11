@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Attendance Records – AttendAI{% endblock %}
+
+{% block nav_links %}
+  <a href="{{ url_for('teacher_dashboard') }}" class="nav-link">Dashboard</a>
+  <a href="{{ url_for('view_attendance') }}" class="nav-link active">Attendance</a>
+  <a href="{{ url_for('teacher_logout') }}" class="btn-nav-logout">Logout</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+  <div class="page-header">
+    <div>
+      <h2>📋 Attendance Records</h2>
+      <p>{{ records|length }} record(s) found</p>
+    </div>
+    <a href="{{ url_for('export_csv', date=filter_date) }}" class="btn btn-success">
+      ⬇ Export CSV
+    </a>
+  </div>
+
+  {% for cat, msg in get_flashed_messages(with_categories=true) %}
+  <div class="alert alert-{{ cat }}">{{ msg }}</div>
+  {% endfor %}
+
+  <!-- Filter bar -->
+  <form method="GET" action="{{ url_for('view_attendance') }}">
+    <div class="filter-bar">
+      <div class="form-group">
+        <label class="form-label">Filter by Date</label>
+        <select class="form-control" name="date" style="width:180px;">
+          <option value="">All Dates</option>
+          {% for d in all_dates %}
+          <option value="{{ d.date }}"
+            {% if d.date == filter_date %}selected{% endif %}>
+            {{ d.date }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Roll No / Name</label>
+        <input class="form-control" type="text" name="roll_no"
+               placeholder="Search…" value="{{ filter_roll }}" style="width:200px;">
+      </div>
+      <button type="submit" class="btn btn-primary">Filter</button>
+      <a href="{{ url_for('view_attendance') }}" class="btn btn-outline">Reset</a>
+    </div>
+  </form>
+
+  <!-- Records table -->
+  <div class="card">
+    <div class="card-body" style="padding:0;">
+      {% if records %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Student Name</th>
+              <th>Roll No</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Marked By</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in records %}
+            <tr>
+              <td style="color:var(--text-muted);font-size:.8rem;">{{ loop.index }}</td>
+              <td style="font-weight:500;">{{ r.student_name }}</td>
+              <td><code>{{ r.roll_no }}</code></td>
+              <td>{{ r.date }}</td>
+              <td>
+                <span class="badge badge-{% if r.status=='Present' %}success{% else %}danger{% endif %}">
+                  {{ r.status }}
+                </span>
+              </td>
+              <td style="color:var(--text-muted);font-size:.85rem;">
+                {{ r.marked_by or '—' }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="icon">📭</div>
+        <p>No attendance records match your filters.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

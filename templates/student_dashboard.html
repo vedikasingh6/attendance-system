@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}My Dashboard – AttendAI{% endblock %}
+
+{% block nav_links %}
+  <a href="{{ url_for('student_dashboard') }}" class="nav-link active">Dashboard</a>
+  <a href="{{ url_for('student_logout') }}" class="btn-nav-logout">Logout</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+  <div class="page-header">
+    <div>
+      <h2>Welcome, {{ session.student_name }} 👋</h2>
+      <p>Roll No: {{ session.student_roll }} &nbsp;·&nbsp; Track your attendance below</p>
+    </div>
+  </div>
+
+  {% for cat, msg in get_flashed_messages(with_categories=true) %}
+  <div class="alert alert-{{ cat }}">{{ msg }}</div>
+  {% endfor %}
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="label">Total Classes</div>
+      <div class="value">{{ total }}</div>
+      <div class="sub">Recorded sessions</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Present</div>
+      <div class="value" style="color:var(--success);">{{ present }}</div>
+      <div class="sub">Classes attended</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Absent</div>
+      <div class="value" style="color:var(--danger);">{{ total - present }}</div>
+      <div class="sub">Classes missed</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Attendance %</div>
+      <div class="progress-ring">
+        <div class="ring-wrap">
+          <svg width="80" height="80" viewBox="0 0 80 80">
+            <circle class="ring-bg"   cx="40" cy="40" r="33"/>
+            <circle class="ring-fill" cx="40" cy="40" r="33"
+                    data-pct="{{ pct }}"
+                    style="stroke:{% if pct >= 75 %}var(--success){% elif pct >= 50 %}var(--warning){% else %}var(--danger){% endif %}"/>
+          </svg>
+          <div class="ring-text">{{ pct }}%</div>
+        </div>
+        <div>
+          <div style="font-size:.9rem;font-weight:600;">
+            {% if pct >= 75 %}✅ Good Standing
+            {% elif pct >= 50 %}⚠️ At Risk
+            {% else %}❌ Critical{% endif %}
+          </div>
+          <div class="text-muted" style="font-size:.8rem;">75% required</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+
+    <!-- Face Registration -->
+    <div class="card">
+      <div class="card-header">
+        📷 Face Registration
+        <span class="face-count-badge">{{ sample_count }}/5 images</span>
+      </div>
+      <div class="card-body">
+
+        {% if sample_count >= 5 %}
+        <div class="alert alert-success">
+          ✅ Face data fully registered — you're ready for attendance marking.
+        </div>
+        {% else %}
+        <p class="text-muted mb-2" style="font-size:.875rem;">
+          Upload <strong>3–5 clear, well-lit face photos</strong>.
+          Look directly at the camera in each photo for best accuracy.
+        </p>
+
+        <div class="alert alert-info" style="font-size:.82rem;margin-bottom:1rem;">
+          💡 <strong>Tips:</strong> Use good lighting · No sunglasses · Face centred · One person per photo
+        </div>
+
+        <form method="POST" action="{{ url_for('upload_faces') }}"
+              enctype="multipart/form-data">
+          <div class="upload-zone">
+            <div class="icon">🤳</div>
+            <p><strong>Click to browse</strong> or drag photos here</p>
+            <p style="font-size:.8rem;margin-top:.3rem;">
+              JPG or PNG · up to {{ 5 - sample_count }} more allowed
+            </p>
+            <input type="file" id="face_images" name="face_images"
+                   accept="image/*" multiple style="display:none;">
+          </div>
+          <div id="face_preview" class="face-grid mt-2"></div>
+          <button type="submit" class="btn btn-primary btn-full mt-2">
+            Upload &amp; Register Faces
+          </button>
+        </form>
+        {% endif %}
+
+      </div>
+    </div>
+
+    <div class="card">
+  <div class="card-header">
+    📸 Registered Face Images
+  </div>
+
+  <div class="card-body">
+
+    {% if face_images %}
+
+    <div style="
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+      gap:15px;
+    ">
+
+      {% for img in face_images %}
+
+      <div style="text-align:center;">
+
+        <img
+  src="{{ url_for('face_image', face_id=img.id) }}"
+  style="
+    width:120px;
+    height:120px;
+    object-fit:cover;
+    border-radius:10px;
+    border:1px solid #ddd;
+  "
+>
+
+        <form
+          method="POST"
+          action="{{ url_for('delete_face', face_id=img.id) }}"
+          style="margin-top:10px;"
+        >
+          <button
+            type="submit"
+            class="btn btn-danger btn-sm"
+          >
+            🗑 Delete
+          </button>
+        </form>
+
+      </div>
+
+      {% endfor %}
+
+    </div>
+
+    {% else %}
+
+    <div class="empty-state">
+      <div class="icon">📷</div>
+      <p>No face images uploaded yet.</p>
+    </div>
+
+    {% endif %}
+
+  </div>
+</div>
+
+    <!-- Attendance Records -->
+    <div class="card">
+      <div class="card-header">📋 Attendance History</div>
+      <div class="card-body" style="padding:0;">
+        {% if records %}
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Status</th></tr></thead>
+            <tbody>
+              {% for r in records[:15] %}
+              <tr>
+                <td>{{ r.date }}</td>
+                <td>
+                  <span class="badge badge-{% if r.status=='Present' %}success{% else %}danger{% endif %}">
+                    {{ r.status }}
+                  </span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if records|length > 15 %}
+        <p class="text-muted" style="padding:.6rem 1rem;font-size:.8rem;">
+          Showing latest 15 of {{ records|length }} records.
+        </p>
+        {% endif %}
+        {% else %}
+        <div class="empty-state">
+          <div class="icon">📭</div>
+          <p>No attendance records yet.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

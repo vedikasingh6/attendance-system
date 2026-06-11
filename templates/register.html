@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Register – AttendAI{% endblock %}
+{% block nav %}{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card" style="max-width:460px;">
+
+    <div class="auth-logo">
+      <div class="icon">📝</div>
+      <h1>Create Account</h1>
+      <p>Register as a student to track your attendance</p>
+    </div>
+
+    {% for cat, msg in get_flashed_messages(with_categories=true) %}
+    <div class="alert alert-{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+
+    <form method="POST" action="{{ url_for('student_register') }}">
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input class="form-control" type="text" name="name"
+               placeholder="Priya Sharma" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Roll Number</label>
+        <input class="form-control" type="text" name="roll_no"
+               placeholder="CS2021001" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input class="form-control" type="email" name="email"
+               placeholder="priya@college.edu" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-control" type="password" name="password"
+               placeholder="Choose a strong password" required minlength="6">
+      </div>
+      <button type="submit" class="btn btn-primary btn-full mt-2">Create Account</button>
+    </form>
+
+    <p class="text-muted mt-2" style="text-align:center;font-size:.85rem;">
+      Already registered?
+      <a href="{{ url_for('student_login') }}" style="color:var(--primary);">Sign in</a>
+    </p>
+
+  </div>
+</div>
+{% endblock %}

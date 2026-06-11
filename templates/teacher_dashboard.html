@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Teacher Dashboard – AttendAI{% endblock %}
+
+{% block nav_links %}
+  <a href="{{ url_for('teacher_dashboard') }}" class="nav-link active">Dashboard</a>
+  <a href="{{ url_for('view_attendance') }}" class="nav-link">Attendance</a>
+  <a href="{{ url_for('teacher_logout') }}" class="btn-nav-logout">Logout</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+  <div class="page-header">
+    <div>
+      <h2>Teacher Dashboard 👩‍🏫</h2>
+      <p>Welcome, {{ session.teacher_name }} &nbsp;·&nbsp; {{ today }}</p>
+    </div>
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+      <!-- Manual retrain button -->
+      <form method="POST" action="{{ url_for('retrain') }}" style="display:inline;">
+        <button type="submit" class="btn btn-outline"
+                title="Rebuild the face recognition model from all stored samples">
+          🔄 Retrain Model
+        </button>
+      </form>
+      <a href="{{ url_for('view_attendance') }}" class="btn btn-outline">📋 All Records</a>
+    </div>
+  </div>
+
+  {% for cat, msg in get_flashed_messages(with_categories=true) %}
+  <div class="alert alert-{{ cat }}">{{ msg }}</div>
+  {% endfor %}
+
+  <!-- Model status banner -->
+  {% if not model_exists %}
+  <div class="alert alert-warning">
+    ⚠️ <strong>Model not trained yet.</strong>
+    Students need to upload face images before attendance can be marked.
+  </div>
+  {% endif %}
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="label">Total Students</div>
+      <div class="value">{{ total_students }}</div>
+      <div class="sub">Registered</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Today's Attendance</div>
+      <div class="value" style="color:var(--success);">{{ today_att }}</div>
+      <div class="sub">Marked today</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Face-Ready</div>
+      <div class="value" style="color:var(--primary);">
+        {{ students | selectattr('sample_count', 'gt', 0) | list | length }}
+      </div>
+      <div class="sub">Have face samples</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Model Status</div>
+      <div class="value" style="font-size:1.5rem;">
+        {% if model_exists %}✅{% else %}⚠️{% endif %}
+      </div>
+      <div class="sub">{% if model_exists %}Trained & ready{% else %}Not trained{% endif %}</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+
+    <!-- Mark Attendance -->
+    <div class="card">
+      <div class="card-header">📸 Mark Attendance via Photo</div>
+      <div class="card-body">
+        <p class="text-muted mb-2" style="font-size:.875rem;">
+          Upload a classroom photo. OpenCV LBPH will detect and match all
+          registered student faces automatically.
+        </p>
+        {% if not model_exists %}
+        <div class="alert alert-warning" style="font-size:.82rem;">
+          ⚠️ Train the model first — students must upload face images.
+        </div>
+        {% endif %}
+        <form method="POST" action="{{ url_for('mark_attendance') }}"
+              enctype="multipart/form-data">
+          <div class="form-group">
+            <label class="form-label">Attendance Date</label>
+            <input class="form-control" type="date" name="att_date" value="{{ today }}">
+          </div>
+          <div class="upload-zone">
+            <div class="icon">🖼️</div>
+            <p><strong>Upload classroom image</strong></p>
+            <p style="font-size:.8rem;margin-top:.3rem;">
+              JPG or PNG · Multiple faces supported
+            </p>
+            <input type="file" name="classroom_image"
+                   accept="image/*" style="display:none;" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full mt-2"
+                  {% if not model_exists %}disabled title="Train model first"{% endif %}>
+            🔍 Detect &amp; Mark Attendance
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Student list -->
+    <div class="card">
+      <div class="card-header">
+        👥 Registered Students
+        <span class="badge badge-primary">{{ total_students }}</span>
+      </div>
+      <div class="card-body" style="padding:0;max-height:500px;overflow-y:auto;">
+        {% if students %}
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Roll No</th>
+                <th>Samples</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in students %}
+              <tr>
+                <td>
+                  <div style="font-weight:500;">{{ s.name }}</div>
+                  <div style="font-size:.78rem;color:var(--text-muted);">{{ s.email }}</div>
+                </td>
+                <td><code>{{ s.roll_no }}</code></td>
+                <td>
+                  {% if s.sample_count > 0 %}
+                  <span class="badge badge-success">✓ {{ s.sample_count }}</span>
+                  {% else %}
+                  <span class="badge badge-warning">None</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if s.sample_count > 0 %}
+                  <form method="POST"
+                        action="{{ url_for('delete_faces', student_id=s.id) }}"
+                        style="display:inline;">
+                    <button type="submit" class="btn btn-danger btn-sm"
+                            data-confirm="Clear all face data for {{ s.name }}?">
+                      🗑
+                    </button>
+                  </form>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <div class="icon">👤</div>
+          <p>No students registered yet.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
