@@ -47,6 +47,30 @@ The project combines Computer Vision, Machine Learning, Web Development, and Dat
 | Frontend        | HTML5, CSS3, JavaScript |
 | Authentication  | Flask Sessions          |
 
+## 📸 Screenshots
+
+### Login & Student Portal
+
+<img src="project_screenshots/login_student_portal.jpeg" width="900">
+
+---
+
+### Student Dashboard
+
+<img src="project_screenshots/student_dashboard.png" width="900">
+
+---
+
+### Teacher Dashboard
+
+<img src="project_screenshots/teacher_dashboard.png" width="900">
+
+---
+
+### Attendance Management Dashboard
+
+<img src="project_screenshots/teacher_dashboard_2.png" width="900">
+
 ## Project Highlights
 
 * Designed a role-based attendance management platform with separate student and teacher workflows.
